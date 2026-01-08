@@ -73,8 +73,9 @@ Respond in JSON format:
 
 export async function getFeed(): Promise<NewsItem[]> {
   // Fetch events from Polymarket
+  const today = new Date().toISOString().split("T")[0];
   const polymarketResponse = await fetch(
-    "https://gamma-api.polymarket.com/events?active=true&closed=false&limit=20",
+    `https://gamma-api.polymarket.com/events?active=true&closed=false&limit=20&endDateMin=${today}`,
     { next: { revalidate: 600 } } // Cache for 10 minutes
   );
 
@@ -87,16 +88,28 @@ export async function getFeed(): Promise<NewsItem[]> {
   // Generate news articles for each event
   const newsItems: NewsItem[] = await Promise.all(
     events.map(async (event) => {
-      // Get the primary market's probability
-      const market = event.markets?.[0];
+      // Find the market with the highest "Yes" probability
       let probability = 50;
+      let bestMarket = event.markets?.[0];
 
-      if (market?.outcomePrices) {
-        try {
-          const prices = JSON.parse(market.outcomePrices);
-          probability = Math.round(parseFloat(prices[0]) * 100);
-        } catch {
-          // Keep default probability
+      if (event.markets?.length) {
+        let highestProb = 0;
+        for (const market of event.markets) {
+          if (market.outcomePrices) {
+            try {
+              const prices = JSON.parse(market.outcomePrices);
+              const yesProb = parseFloat(prices[0]);
+              if (!isNaN(yesProb) && yesProb > highestProb) {
+                highestProb = yesProb;
+                bestMarket = market;
+              }
+            } catch {
+              // Skip invalid market
+            }
+          }
+        }
+        if (highestProb > 0) {
+          probability = Math.round(highestProb * 100);
         }
       }
 
@@ -117,5 +130,6 @@ export async function getFeed(): Promise<NewsItem[]> {
     })
   );
 
-  return newsItems;
+  // Sort by probability descending (most likely at top)
+  return newsItems.sort((a, b) => b.probability - a.probability);
 }

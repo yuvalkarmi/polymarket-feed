@@ -32,7 +32,7 @@ export function NewsCard({
             sizes="(max-width: 768px) 100vw, 600px"
           />
           <div className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-sm font-semibold text-white backdrop-blur-sm">
-            {probability}% likely
+            {probability}%
           </div>
         </div>
       )}
