@@ -72,7 +72,13 @@ Respond in JSON format:
   }
 }
 
+const EXPIRATION_DATE = new Date("2026-01-15");
+
 export async function GET() {
+  if (new Date() > EXPIRATION_DATE) {
+    return NextResponse.json({ error: "This site is no longer active" }, { status: 410 });
+  }
+
   try {
     // Fetch events from Polymarket
     const polymarketResponse = await fetch(

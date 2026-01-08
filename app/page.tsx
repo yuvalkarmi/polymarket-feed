@@ -4,7 +4,21 @@ import { getFeed, NewsItem } from "./lib/feed";
 // ISR: Revalidate every 10 minutes
 export const revalidate = 600;
 
+const EXPIRATION_DATE = new Date("2026-01-15");
+
 export default async function Home() {
+  const isExpired = new Date() > EXPIRATION_DATE;
+
+  if (isExpired) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
+        <p className="text-xl text-zinc-500 dark:text-zinc-400">
+          This site is no longer active.
+        </p>
+      </div>
+    );
+  }
+
   let newsItems: NewsItem[] = [];
   let error: string | null = null;
 
